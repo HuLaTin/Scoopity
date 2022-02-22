@@ -37,10 +37,10 @@ for i in spotifyFeatures:
 
 #for i in range(1):
 for i in range(len(uniqueSongCount)):
-    artist = uniqueSongCount.loc[i,'trackName']
-    track = uniqueSongCount.loc[i, 'artistName']
+    track = uniqueSongCount.loc[i,'trackName']
+    artist = uniqueSongCount.loc[i, 'artistName']
 
-    searchQuery = track + ' ' + artist
+    searchQuery = artist + ' ' + track
     #print(searchQuery)
     searchResults = sp.search(q=searchQuery, limit = 1)
 
@@ -63,6 +63,5 @@ for i in range(len(uniqueSongCount)):
         else:
             for j in spotifyFeatures:
                 uniqueSongCount.loc[i,j] = features[j]
-
     
 uniqueSongCount.to_csv(r'Data\spotifyData.csv', index = False)

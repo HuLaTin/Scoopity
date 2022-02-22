@@ -4,3 +4,4 @@ Data/streamingHistory.csv
 Data/spotifyData.csv
 .cache
 my_spotify_data/MyData
+__pycache__/myKeys.cpython-37.pyc

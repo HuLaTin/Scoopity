@@ -1,25 +1,28 @@
 import pandas as pd
-from bs4 import BeautifulSoup
-import requests
+#from bs4 import BeautifulSoup
+import requests, json
 from urllib.parse import quote, quote_plus
-from urllib.request import urlopen
-import lxml.html
+#from urllib.request import urlopen
+#import lxml.html
+#import time
+import os
 from lxml import etree
-import json
-import time
 
 songData = pd.read_csv(r'Data\spotifyData.csv')
 
-songData['lyrics'] = None
-notFound = []
-geniusLyrics = []
+if os.path.exists(r'Data\songLyricData.csv'):
+    print('Lyric data already exists')
+
+songData['lyrics'] = None #create new column
+notFound = [] #empty list for songs that aren't found
+#geniusLyrics = []
 #geniusFilter = '$'
 
+#finding 'data-lyrics-container='true'' and the text contained within
 findLyrics = etree.XPath("//div[@data-lyrics-container='true']/text()|//div[@data-lyrics-container='true']/a/span/text()")
-#findLyrics = etree.XPath("//div[@id='song_body-lyrics']/div/text()")
 
-#toRemove = ("[Intro]", "[Interlude]", "[Outro]")
-toRemove = (' - Bonus Track', ' Bonus')
+# Use toRemove list to filter out 'problem' words, Genius titles don't always mirror Spotify.
+toRemove = (' - Bonus Track', ' Bonus', ' (Demo)')
 
 #for i in range(1):
 for i in range(len(songData)):
@@ -34,52 +37,34 @@ for i in range(len(songData)):
     r = requests.get('https://genius.com/api/search/multi?per_page=5&q='+ quote_plus(artist + ' ' + track))
     lyricsJson = json.loads(r.text)
 
+    #if status != 200 then wait
     if len(lyricsJson['response']['sections'][0]['hits']) == 0:
-        print(artist + ' ' + track)
-        notFound = notFound.append(str(artist + ' ' + track))
+        #print('Status' + str(lyricsJson['response']) +':: ' + artist + ' ' + track, ': *** Not Found ***')
+        print(artist + ' ' + track, ': *** Not Found ***')
+        notFound.append(str(artist + ' ' + track))
+        songData.loc[i, 'lyrics'] = None
         continue
+    
+    if lyricsJson['response']['sections'][0]['hits'][0]['result'].__contains__('path') :
+        path = lyricsJson['response']['sections'][0]['hits'][0]['result']['path']
 
-    path = lyricsJson['response']['sections'][0]['hits'][0]['result']['path']
+        r = requests.get('https://genius.com'+ path)
+        html = etree.HTML(r.text)
 
-    r = requests.get('https://genius.com'+ path)
-    html = etree.HTML(r.text)
+        geniusLyrics = findLyrics(html)
 
-    geniusLyrics = findLyrics(html)
-
-    songData.loc[i, 'lyrics'] = ' '.join(geniusLyrics)
+        songData.loc[i, 'lyrics'] = ' '.join(geniusLyrics)
+    else:
+        print(artist + ' ' + track + ': *** No Path ***')
+        notFound.append(str(artist + ' ' + track))
+        songData.loc[i, 'lyrics'] = None
 
     #to avoid hitting any traffic limits
     #time.sleep(.1)
 
 songData.to_csv(r'Data\songLyricData.csv', index = False)
+pd.DataFrame(notFound).to_csv(r'Data\unfound.csv', index = False)
 
-# for i in range(10):
-# #for i in range(len(songData)):
-#     artist = songData.loc[i,'artistName']
-#     track = songData.loc[i, 'trackName']
-#     searchQuery = str(artist) + '-' + str(track) + '-lyrics'
-#     searchQuery = searchQuery.replace(' ', '-'); searchQuery = searchQuery.replace('$', '').replace('#', '').replace('.', '').replace(',', '')
-#     #searchQuery = searchQuery.lower()
-#     print(searchQuery)
-
-#     r = requests.get('https://genius.com/'+ searchQuery)
-#     html = etree.HTML(r.text)
-
-#     lyrics = findLyrics(html)
-#     print(lyrics)
-
-    #page = requests.get('https://genius.com/'+ searchQuery)
-    #html = BeautifulSoup(page.text)
-
-    #lyrics1 = html.find("div", class_='Lyrics').get_text()
-    # lyrics2 = html.find("div", class_="Lyrics__Container-sc-1ynbvzw-2 jgQsqn")
-
-    # if lyrics1:
-    #     lyrics = lyrics1.get_text()
-    # elif lyrics2:
-    #     lyrics = lyrics2.get_text()
-    # elif lyrics1 == lyrics2 == None:
-    #     print(str(searchQuery) + ": returned no lyrics.")
-    #     lyrics = None
-    #     notFound = notFound.append(str(searchQuery))
- 
+### Notes ###
+# 'Maple Syrup' to 'Maple $yrup'
+# 'Pontiac Sunfire' to 'Pontiac $unfire'
