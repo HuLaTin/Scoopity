@@ -1,7 +1,14 @@
 myKeys.py
+Data/
+Data/artistData.csv
+Data/songLyricData.csv
+Data/unfound.csv
 Data/uniqueSongCount.csv
 Data/streamingHistory.csv
 Data/spotifyData.csv
 .cache
+my_spotify_data
 my_spotify_data/MyData
+__pycache__
 __pycache__/myKeys.cpython-37.pyc
+__pycache__/util.cpython-37.pyc
