@@ -1,3 +1,7 @@
+#
+# This script will get both track ids and spotify features, if they exist
+#
+# import libraries
 import pandas as pd
 import spotipy, myKeys
 from spotipy.oauth2 import SpotifyClientCredentials
@@ -18,22 +22,21 @@ uniqueSongCount = streamingHistory.groupby(["artistName", "trackName"],as_index=
 #uniqueSongs = uniqueSongs.rename(columns={0: 'trackName'})
 uniqueSongCount = uniqueSongCount.rename(columns={'size': 'count'})
 
-#set Client ID and Secret
+# set Client ID and Secret
 cid = myKeys.clientID
 secret = myKeys.secret
 
-#spotipy credentials manager
+# spotipy credentials manager
 client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
 sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
 
-#features that we decided to gather
-#spotify only allows you to gather genre by artist, not each song
-spotifyFeatures = ('danceability','energy', 'key', 'loudness','mode', 'speechiness','acousticness', 'instrumentalness', 'liveness',
+# features that we decided to gather
+spotifyFeatures = ('danceability','energy', 'key', 'loudness','mode', 'speechiness', 'acousticness', 'instrumentalness', 'liveness',
                 'valence', 'tempo', 'duration_ms', 'time_signature')
 
-uniqueSongCount['id'] = ''
+uniqueSongCount['id'] = None
 for i in spotifyFeatures:
-    uniqueSongCount[i] = ''
+    uniqueSongCount[i] = None
 
 #for i in range(1):
 for i in range(len(uniqueSongCount)):
