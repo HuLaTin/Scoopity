@@ -24,7 +24,7 @@ uniqueSongCount = uniqueSongCount.rename(columns={'size': 'count'})
 
 # create copy for lyric data
 trackLyrics = uniqueSongCount.copy(deep=True)
-trackLyrics = trackLyrics.drop(columns=['count']); trackLyrics['lyrics'] = None; trackLyrics['tags'] = None
+trackLyrics = trackLyrics.drop(columns=['count']); trackLyrics['lyrics'] = None; trackLyrics['tags'] = None; trackLyrics['geniusArtist'] = None
 
 # get unique artist
 uniqueArtist = pd.DataFrame(streamingHistory.artistName.unique())
@@ -70,7 +70,6 @@ for i in range(len(uniqueSongCount)):
 print('Feature data collected')
 uniqueSongCount.to_csv(r'Data\featureData.csv', index = False)
 
-
 # collect lyrics for tracks by scraping Genius
 
 # path for containers that hold lyrics as text on Genius' website
@@ -91,9 +90,10 @@ for i in range(len(trackLyrics)):
         if j in track:
             track = track.replace(j, '')
 
-    lyrics, tags = util.getLyrics(artist, track, lyricPath, tagPath, requests, quote_plus, json, etree)
+    lyrics, tags, artist = util.getLyrics(artist, track, lyricPath, tagPath, requests, quote_plus, json, etree)
     trackLyrics.loc[i,'lyrics'] = lyrics
     trackLyrics.loc[i, 'tags'] = tags
+    trackLyrics.loc[i, 'geniusArtist '] = artist
     #print(lyrics)
 
 print('Lyric data collected')

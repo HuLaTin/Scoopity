@@ -13,18 +13,22 @@ songData = songData[['artistName','trackName']]
 
 songData['tags'] = None #create new column for tags/genres
 songData['lyrics'] = None #create new column for lyrics
+songData['geniusArtist'] = None
 
 notFound = [] #empty list for songs that aren't found
 
 #finding 'data-lyrics-container='true'' and the text contained within
 findLyrics = etree.XPath("//div[@data-lyrics-container='true']/text()|//div[@data-lyrics-container='true']/a/span/text()")
 findTags = etree.XPath("//a[starts-with(@class, 'SongTags')]/text()")
+# this path may not be great
+#findArtist = etree.XPath("//a/text()")
+#findTrack = None
 
 # Use toRemove list to filter out 'problem' words, Genius titles don't always mirror Spotify.
 toRemove = (' - Bonus Track', ' Bonus', ' (Demo)', ' (Acoustic)', ' - Remastered', ' - Original Mix', '- Live', ' Live', ' - Demo Version',' - Demo', ' - Single Version', ' - Single')
 
-#for i in range(100):
-for i in range(len(songData)):
+for i in range(25):
+#for i in range(len(songData)):
     artist = songData.loc[i,'artistName']
     track = songData.loc[i, 'trackName']
 
@@ -56,9 +60,10 @@ for i in range(len(songData)):
             songData.loc[i, 'tags'] = ', '.join(findTags(html))
             continue
         
-        geniusLyrics = findLyrics(html)
+        #geniusLyrics = findLyrics(html)
+        songData.loc[i, 'geniusArtist'] = str(lyricsJson['response']['sections'][0]['hits'][0]['result']['artist_names'])
 
-        songData.loc[i, 'lyrics'] = ' '.join(geniusLyrics)
+        songData.loc[i, 'lyrics'] = ' '.join(findLyrics(html))
         songData.loc[i, 'tags'] = ', '.join(findTags(html))
     else:
         print(artist + ' ' + track + ': *** No Path ***')

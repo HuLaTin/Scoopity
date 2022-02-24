@@ -41,6 +41,7 @@ def getLyrics(artistName, trackName, lyricPath, tagPath,  requests, quote_plus, 
         #notFound.append(str(artist + ' ' + track))
         lyrics = None
         tags = None
+        artist = None
         #continue
     else:
         if lyricsJson['response']['sections'][0]['hits'][0]['result'].__contains__('path') :
@@ -63,10 +64,12 @@ def getLyrics(artistName, trackName, lyricPath, tagPath,  requests, quote_plus, 
             #lyrics = ' '.join(geniusLyrics)
             lyrics = ' '.join(lyricPath(html))
             tags = ', '.join(tagPath(html))
+            artist = str(lyricsJson['response']['sections'][0]['hits'][0]['result']['artist_names'])
         else:
             #print(artist + ' ' + track + ': *** No Path ***')
             #notFound.append(str(artist + ' ' + track))
             lyrics = None
             tags = None
+            artist = None
             
-    return lyrics, tags
+    return lyrics, tags, artist
