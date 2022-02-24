@@ -29,7 +29,7 @@ def getFeatures(sp, artistName, trackName, spotifyFeatures):
 
     return dictFeat
 
-def getLyrics(artistName, trackName, lyricPath, requests, quote_plus, json, etree):
+def getLyrics(artistName, trackName, lyricPath, tagPath,  requests, quote_plus, json, etree):
 
     r = requests.get('https://genius.com/api/search/multi?per_page=5&q='+ quote_plus(artistName + ' ' + trackName))
     lyricsJson = json.loads(r.text)
@@ -40,21 +40,33 @@ def getLyrics(artistName, trackName, lyricPath, requests, quote_plus, json, etre
         #print(artistName + ' ' + track, ': *** Not Found ***')
         #notFound.append(str(artist + ' ' + track))
         lyrics = None
+        tags = None
         #continue
-    
-    if lyricsJson['response']['sections'][0]['hits'][0]['result'].__contains__('path') :
-        path = lyricsJson['response']['sections'][0]['hits'][0]['result']['path']
-
-        r = requests.get('https://genius.com'+ path)
-        html = etree.HTML(r.text)
-
-        geniusLyrics = lyricPath(html)
-
-        # may have to handle some characters here
-        lyrics = ' '.join(geniusLyrics)
     else:
-        #print(artist + ' ' + track + ': *** No Path ***')
-        #notFound.append(str(artist + ' ' + track))
-        lyrics = None
+        if lyricsJson['response']['sections'][0]['hits'][0]['result'].__contains__('path') :
+            #path = lyricsJson['response']['sections'][0]['hits'][0]['result']['path']
+            #r = requests.get('https://genius.com'+ path)
 
-    return lyrics
+            r = requests.get('https://genius.com'+ lyricsJson['response']['sections'][0]['hits'][0]['result']['path'])
+
+            html = etree.HTML(r.text)
+
+            if 'Non-Music' in tagPath(html) or 'Literature' in tagPath(html):
+                #print(artistName + ' ' + trackName + ' ' + str(tagPath(html)))
+                #songData.loc[i, 'lyrics'] = None
+                tags = ', '.join(tagPath(html))
+                #continue
+
+            #geniusLyrics = lyricPath(html)
+
+            # may have to handle some characters here
+            #lyrics = ' '.join(geniusLyrics)
+            lyrics = ' '.join(lyricPath(html))
+            tags = ', '.join(tagPath(html))
+        else:
+            #print(artist + ' ' + track + ': *** No Path ***')
+            #notFound.append(str(artist + ' ' + track))
+            lyrics = None
+            tags = None
+            
+    return lyrics, tags

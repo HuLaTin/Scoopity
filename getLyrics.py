@@ -8,23 +8,22 @@ from urllib.parse import quote_plus
 import os
 from lxml import etree
 
-songData = pd.read_csv(r'Data\spotifyData.csv')
+songData = pd.read_csv(r'Data\featureData.csv')
+songData = songData[['artistName','trackName']]
 
-if os.path.exists(r'Data\songLyricData.csv'):
-    print('Lyric data already exists')
+songData['tags'] = None #create new column for tags/genres
+songData['lyrics'] = None #create new column for lyrics
 
-songData['lyrics'] = None #create new column
 notFound = [] #empty list for songs that aren't found
-#geniusLyrics = []
-#geniusFilter = '$'
 
 #finding 'data-lyrics-container='true'' and the text contained within
 findLyrics = etree.XPath("//div[@data-lyrics-container='true']/text()|//div[@data-lyrics-container='true']/a/span/text()")
+findTags = etree.XPath("//a[starts-with(@class, 'SongTags')]/text()")
 
 # Use toRemove list to filter out 'problem' words, Genius titles don't always mirror Spotify.
-toRemove = (' - Bonus Track', ' Bonus', ' (Demo)')
+toRemove = (' - Bonus Track', ' Bonus', ' (Demo)', ' (Acoustic)', ' - Remastered', ' - Original Mix', '- Live', ' Live', ' - Demo Version',' - Demo', ' - Single Version', ' - Single')
 
-#for i in range(1):
+#for i in range(100):
 for i in range(len(songData)):
     artist = songData.loc[i,'artistName']
     track = songData.loc[i, 'trackName']
@@ -42,29 +41,46 @@ for i in range(len(songData)):
         #print('Status' + str(lyricsJson['response']) +':: ' + artist + ' ' + track, ': *** Not Found ***')
         print(artist + ' ' + track, ': *** Not Found ***')
         notFound.append(str(artist + ' ' + track))
-        songData.loc[i, 'lyrics'] = None
+        #songData.loc[i, 'lyrics'] = None
         continue
     
     if lyricsJson['response']['sections'][0]['hits'][0]['result'].__contains__('path') :
-        path = lyricsJson['response']['sections'][0]['hits'][0]['result']['path']
+        #path = lyricsJson['response']['sections'][0]['hits'][0]['result']['path']
 
-        r = requests.get('https://genius.com'+ path)
+        r = requests.get('https://genius.com' + lyricsJson['response']['sections'][0]['hits'][0]['result']['path'])
         html = etree.HTML(r.text)
 
+        if 'Non-Music' in findTags(html) or 'Literature' in findTags(html):
+            print(artist + ' ' + track + ' ' + str(findTags(html)))
+            #songData.loc[i, 'lyrics'] = None
+            songData.loc[i, 'tags'] = ', '.join(findTags(html))
+            continue
+        
         geniusLyrics = findLyrics(html)
 
         songData.loc[i, 'lyrics'] = ' '.join(geniusLyrics)
+        songData.loc[i, 'tags'] = ', '.join(findTags(html))
     else:
         print(artist + ' ' + track + ': *** No Path ***')
         notFound.append(str(artist + ' ' + track))
-        songData.loc[i, 'lyrics'] = None
+        #songData.loc[i, 'lyrics'] = None
 
     #to avoid hitting any traffic limits
     #time.sleep(.1)
 
-songData.to_csv(r'Data\songLyricData.csv', index = False)
+songData.to_csv(r'Data\lyricData.csv', index = False)
 pd.DataFrame(notFound).to_csv(r'Data\unfound.csv', index = False)
 
 ### Notes ###
 # 'Maple Syrup' to 'Maple $yrup'
 # 'Pontiac Sunfire' to 'Pontiac $unfire'
+# 'Bags' to 'Bag$'
+# '100 Blunts' to '100 Blunt$'
+# 'Grey Boys' to 'Grey Boy$'
+# 'Lemon Slime' to 'Lemon $lime'
+# 'Saturn Sunrise' to '$aturn $unrise'
+
+# wrong lyrics
+# Abandoned Toys 'The Witch's Gardern (prelude)'
+# Ark Patrol 'Pleasantries'
+# Ark Patrol 'Sorrow Doesnt Ressurect'
