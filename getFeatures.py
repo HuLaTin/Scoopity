@@ -3,11 +3,11 @@
 #
 # import libraries
 import pandas as pd
-import spotipy, myKeys
+import spotipy, Data.Input.myKeys as myKeys
 from spotipy.oauth2 import SpotifyClientCredentials
 #from urllib.parse import quote
 
-streamingHistory = pd.read_csv('Data\streamingHistory.csv')
+streamingHistory = pd.read_csv('Data\Input\streamingHistory.csv')
 #streamingHistory.columns
 
 #uniqueSongs = streamingHistory.sort_values('artistName').drop_duplicates('trackName', keep='last')

@@ -1,6 +1,6 @@
 # import libraries
 import pandas as pd
-import spotipy, myKeys
+import spotipy, Data.Input.myKeys as myKeys
 from spotipy.oauth2 import SpotifyClientCredentials
 
 # load in data

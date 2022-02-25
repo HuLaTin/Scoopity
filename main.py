@@ -1,6 +1,6 @@
 # import required libraries
 import pandas as pd
-import spotipy, myKeys
+import spotipy, Data.Input.myKeys as myKeys
 from spotipy.oauth2 import SpotifyClientCredentials
 import requests, json
 from urllib.parse import quote_plus
@@ -16,7 +16,7 @@ client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secr
 sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
 
 # load streaming history
-streamingHistory = pd.read_csv(r'Data\streamingHistory.csv')
+streamingHistory = pd.read_csv(r'Data\Input\streamingHistory.csv')
 
 # get unique songs and the number of listens
 uniqueSongCount = streamingHistory.groupby(["artistName", "trackName"],as_index=False).size()
