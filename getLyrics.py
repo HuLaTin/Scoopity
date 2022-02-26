@@ -72,7 +72,7 @@ for i in range(len(songData)):
 
         fuzzMatch = fuzz.partial_ratio(songData.loc[i,'artistName'].upper(), str(lyricsJson['response']['sections'][0]['hits'][0]['result']['artist_names']).upper())
 
-        if fuzzMatch < 80:
+        if fuzzMatch <= 70:
             track = re.sub(trackPattern, '', track).strip()
 
             time.sleep(2)
@@ -84,7 +84,7 @@ for i in range(len(songData)):
 
             fuzzMatch = fuzz.partial_ratio(songData.loc[i,'artistName'].upper(), str(lyricsJson['response']['sections'][0]['hits'][0]['result']['artist_names']).upper())
 
-            if fuzzMatch < 80:
+            if fuzzMatch <= 70:
                 print(artist + ' ' + track, ': *** Not Found ***')
                 notFound.append(str(artist + ' ' + track))
                 continue
@@ -95,7 +95,7 @@ for i in range(len(songData)):
 
             fuzzMatch = fuzz.partial_ratio(songData.loc[i,'artistName'].upper(), str(lyricsJson['response']['sections'][0]['hits'][0]['result']['artist_names']).upper())
 
-            if fuzzMatch < 80:
+            if fuzzMatch <= 70:
                 track = re.sub(trackPattern, '', track).strip()
 
                 time.sleep(2)
