@@ -179,12 +179,22 @@ for i in range(len(songData)):
 
         if bool(findReleaseDate(html)):
             songData.loc[i,'releaseDate'] = json.dumps(findReleaseDate(html))
+            #songData.loc[i,'releaseDate'] = max(findReleaseDate(html))
+
         else:
             pass
     
     else:
         print(artist + ' ' + track + ': *** No Path ***')
         notFound.append(str(artist + ' ' + track))
+
+# for i in range(len(songData)):
+#     date = songData.loc[i, 'releaseDate']
+#     if bool(date):
+#         date = json.loads(date)
+#         songData.loc[i, 'releaseDate'] = max(date, key=len)
+#     else:
+#         pass
 
 songData.to_csv(r'Data\lyricData.csv', index = False)
 pd.DataFrame(notFound).to_csv(r'Data\unfound.csv', index = False)
