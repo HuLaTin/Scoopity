@@ -1,6 +1,7 @@
 import pandas as pd
+from pyparsing import Regex
 #from bs4 import BeautifulSoup
-import spacy
+import spacy, json, re
 #import unidecode
 #from word2number import w2n
 #import contractions
@@ -13,7 +14,6 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.corpus import stopwords
 
-
 # load spacy model, or "en_core_web_sm"
 nlp = spacy.load('en_core_web_md')
 
@@ -21,28 +21,44 @@ lyricData = pd.read_csv(r'Data\lyricData.csv') # import data
 lyricData = lyricData[['artistName','trackName','tags','lyrics']] # setting order of columns
 lyricData['tokens'] = None; lyricData['uniqueWords'] = None # creation of new columns
 
-lyricData.dropna(subset = ["lyrics"], inplace=True); lyricData.reset_index(drop=True, inplace=True) # remove rows with nothing in them
+#type(lyricData['lyrics'])
 
+lyricData.dropna(subset = ["lyrics"], inplace=True); lyricData.reset_index(drop=True, inplace=True) # remove rows with nothing in them
 
 nonlyricPattern = r'\[.*?\]|\(\s*?\)|\*+|\"'
 parenthesesPattern = r'\(.*?\)'
 spacePattern = r'\s{2,}'
 charPattern = r'[^A-zÀ-ÿ0-9\ \']'
-sboysPattern = r'\$' #because of course they have to...
+dollaPattern = r'\$' #because of course they have to...
 
-lyricData['lyrics'].replace(to_replace=nonlyricPattern, value='', inplace=True, regex=True); lyricData['lyrics'].replace(to_replace=parenthesesPattern, value='', inplace=True, regex=True)
-lyricData['lyrics'].replace(to_replace=charPattern, value=' ', inplace=True, regex=True);lyricData['lyrics'].replace(to_replace=spacePattern, value=' ', inplace=True, regex=True)
-lyricData['lyrics'].replace(to_replace=sboysPattern, value='s', inplace=True, regex=True) #sboys like their dollar signs
-lyricData['lyrics'] = lyricData['lyrics'].str.strip()
-
+#for i in range(5):
 for i in range(len(lyricData)):
-    lyrics = lyricData.loc[i,'lyrics'] 
-    lyrics = util.strip_html_tags(lyrics) # strip html tags, common with webscraping
-    lyrics = util.remove_accented_chars(lyrics) # swaps accented characters
-    lyrics = util.expand_contractions(lyrics) # expand contractions
+    lyrics = json.loads(lyricData.loc[i,'lyrics'])
+    print(lyrics)
+    for j in range(len(lyrics)):
+        sent = lyrics[j]
+        
+        sent = util.strip_html_tags(sent) # strip html tags, common with webscraping
+        sent = util.remove_accented_chars(sent) # swaps accented characters
+        sent = util.expand_contractions(sent) # expand contractions
+
+        lyrics[j] = re.sub(nonlyricPattern, '', lyrics[j])
+        lyrics[j] = re.sub(parenthesesPattern, '', lyrics[j])
+        lyrics[j] = re.sub(charPattern, ' ', lyrics[j])
+        lyrics[j] = re.sub(spacePattern, ' ', lyrics[j])
+        lyrics[j] = re.sub(dollaPattern, 's', lyrics[j]) # to remove $ from lyrics
+        lyrics[j] = lyrics[j].strip()
+    
+    while('' in lyrics): # remove empty objects
+        lyrics.remove('')
+
+    
+    print(lyrics)
+
+        
     #sentences = sent_tokenize(lyrics)
 
-    lyrics = word_tokenize(lyrics.lower()) #tokenize each word/ turn all letters lower case
+    #lyrics = word_tokenize(lyrics.lower()) #tokenize each word/ turn all letters lower case
 
     lyrics = [word for word in lyrics if word not in stopwords.words('english')] # filtering out stop words
     lyricData.loc[i,'tokens'] = [word for word in lyrics if word.isalnum()] # filter out if not alpha-numeric

@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 import unidecode
 import contractions
+#import re
 
 def strip_html_tags(text):
     """remove html tags from text"""

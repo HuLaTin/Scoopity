@@ -71,6 +71,10 @@ print('Feature data collected')
 uniqueSongCount.to_csv(r'Data\featureData.csv', index = False)
 
 # collect lyrics for tracks by scraping Genius
+# update to collect release date
+###
+# UPDATE
+###
 
 # path for containers that hold lyrics as text on Genius' website
 lyricPath = etree.XPath("//div[@data-lyrics-container='true']/text()|//div[@data-lyrics-container='true']/a/span/text()")
