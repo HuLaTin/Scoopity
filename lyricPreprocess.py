@@ -1,30 +1,16 @@
 import pandas as pd
-#from pyparsing import Regex
-#from bs4 import BeautifulSoup
 import json, re
-#import unidecode
-#from word2number import w2n
-#import contractions
-#from fuzzywuzzy import process, fuzz
-#import re
 import util
-#import string
-#import nltk
-#from nltk.corpus import stopwords
-#from nltk.tokenize import word_tokenize, sent_tokenize
-#from nltk.corpus import stopwords
-
-# load spacy model, or "en_core_web_sm"
-#nlp = spacy.load('en_core_web_md')
 
 lyricData = pd.read_csv(r'Data\lyricData.csv') # import data
-lyricData = lyricData[['artistName','trackName','tags','lyrics']] # setting order of columns
-lyricData['processedLyrics'] = None; lyricData['uniqueWords'] = None # creation of new columns
+
+lyricData = lyricData[lyricData['isFound'] == True]
+lyricData = lyricData[['artistName','trackName','lyrics']] # setting order of columns
+lyricData['processedLyrics'] = None#; lyricData['uniqueWords'] = None # creation of new columns
 #lyricData['language'] = None; lyricData['languageScore'] = None
 
 #type(lyricData['lyrics'])
-
-lyricData.dropna(subset = ["lyrics"], inplace=True); lyricData.reset_index(drop=True, inplace=True) # remove rows with nothing in them
+lyricData.reset_index(drop=True, inplace=True) # remove rows with nothing in them
 
 nonlyricPattern = r'\[.*?\]|\(\s*?\)|\*+'
 bracketPattern = r'\[.*|\]'
@@ -55,6 +41,10 @@ for i in range(len(lyricData)):
     while('' in lyrics): # remove empty objects
         lyrics.remove('')
 
+    if len(lyrics) == 0:
+        lyricData.loc[i, 'processedLyrics'] = None
+        continue
+
     lyricData.loc[i, 'processedLyrics'] = json.dumps(lyrics)
         
     #sentences = sent_tokenize(lyrics)
@@ -68,12 +58,34 @@ for i in range(len(lyricData)):
     # what about numbers?
 
 nan_value = float("NaN"); lyricData.replace("", nan_value, inplace=True) #replace any rows that are empty with 'NaN' values
-lyricData.dropna(subset = ["lyrics"], inplace=True); lyricData.reset_index(drop=True, inplace=True) # drop the 'NaN' rows and reset index inplace
+lyricData.dropna(subset = ["processedLyrics"], inplace=True); lyricData.reset_index(drop=True, inplace=True) # drop the 'NaN' rows and reset index inplace
 
-# nlp.add_pipe('language_detector', last=True)
-# for i in range(len(lyricData)):
-#     text = ', '.join(json.loads(lyricData.loc[i, 'processedLyrics']))
-#     doc = nlp(str(', '.join(json.loads(lyricData.loc[i, 'processedLyrics']))))
-
+languageData = lyricData.copy(deep=True)
 lyricData.to_csv(r'Data\lyricPreprocess.csv', index = False)
 
+#############################################################
+
+import spacy
+from spacy.language import Language
+from spacy_langdetect import LanguageDetector
+
+# build language detector
+@Language.factory("language_detector") # decorator
+def get_lang_detector(nlp, name):
+   return LanguageDetector()
+
+nlp = spacy.load("en_core_web_sm")
+nlp.add_pipe('language_detector', last=True)
+#lyricsData= pd.read_csv(r'Data\lyricPreprocess.csv')
+languageData = languageData[['artistName', 'trackName', 'processedLyrics']] # select and order columns
+languageData['language'] = None; languageData['languageScore'] = None # new columns
+
+for i in range(len(languageData)):
+    text = str(' '.join(json.loads(languageData.loc[i, 'processedLyrics'])))
+    doc = nlp(text)
+    language = list(doc._.language.values())
+    languageData.loc[i, 'language'] = language[0]
+    languageData.loc[i, 'languageScore'] = language[1]
+
+languageData = languageData.loc[(languageData['language'] == 'en') & (languageData['languageScore'] >= .7)] # select rows
+languageData.to_csv(r'Data\englishTracks.csv', index=False)

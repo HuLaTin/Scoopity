@@ -1,8 +1,11 @@
+#from numpy import True_
 import pandas as pd
 import requests, json, time, re
 from urllib.parse import quote_plus
 from lxml import etree
 from fuzzywuzzy import fuzz
+from util import remove_accented_chars
+
 
 songData = pd.read_csv(r'Data\featureData.csv')
 songData = songData[['artistName','trackName']]
@@ -11,7 +14,7 @@ songData['tags'] = None # create new column for tags/genres
 songData['lyrics'] = None # create new column for lyrics
 songData['geniusArtist'] = None # column for artist field returned from Genius
 songData['releaseDate'] = None # column for release date scraped from Genius
-songData['isFound'] = None
+songData['isFound'] = None # column stores bool variable if found or not
 
 # navigate xml documents, these paths navigate to the desired data
 findLyrics = etree.XPath("//div[@data-lyrics-container='true']/text()|//div[@data-lyrics-container='true']/a/span/text()")
@@ -41,7 +44,7 @@ for i in range(len(songData)):
     lyricsJson = json.loads(r.text)
     
     # if nothing is found print to screen and append to list
-    if len(lyricsJson['response']['sections'][0]['hits']) == 0:
+    if bool(lyricsJson['response']['sections'][0]['hits']) == False:
         #continue
         track = re.sub(trackPattern, '', track).strip()
         #print(track)
@@ -59,8 +62,8 @@ for i in range(len(songData)):
 
         lyricsJson = json.loads(r.text)
 
-        if len(lyricsJson['response']['sections'][0]['hits']) == 0:
-            print(artist + ' ' + track, ': *** No "hits" ***')
+        if bool(lyricsJson['response']['sections'][0]['hits']) == False:
+            print(artist + ' ' + track, ': No Hits')
             songData.loc[i,'isFound'] = False
             continue
    
@@ -80,12 +83,12 @@ for i in range(len(songData)):
         html = etree.HTML(r.text)
 
         if bool(lyricsJson['response']['sections'][0]['hits'][0]['result'].__contains__('artist_names')):
-            foundArtist = str(lyricsJson['response']['sections'][0]['hits'][0]['result']['artist_names']).upper()
+            foundArtist = remove_accented_chars(lyricsJson['response']['sections'][0]['hits'][0]['result']['artist_names']).strip()
         else:
             foundArtist = None
 
         #calculates levenshtein similarity ratio with fuzzy string matching
-        fuzzMatch = fuzz.partial_ratio(songData.loc[i,'artistName'].upper(), foundArtist)
+        fuzzMatch = fuzz.partial_ratio(songData.loc[i,'artistName'].upper(), foundArtist.upper())
 
         if fuzzMatch <= 70:
             # use regex to remove selected portions of string
@@ -103,35 +106,41 @@ for i in range(len(songData)):
 
             lyricsJson = json.loads(r.text)
 
-            if lyricsJson['response']['sections'][0]['hits'][0]['result'].__contains__('path'):
+            if bool(lyricsJson['response']['sections'][0]['hits']) != False:
 
-                r = requests.get('https://genius.com' + lyricsJson['response']['sections'][0]['hits'][0]['result']['path'])
+                if lyricsJson['response']['sections'][0]['hits'][0]['result'].__contains__('path'):
 
-                if r.status_code != 200:
-                    while True:
-                        print(str(r))
-                        time.sleep(15)
-                        r = requests.get('https://genius.com' + lyricsJson['response']['sections'][0]['hits'][0]['result']['path'])
-                        if r.status_code == 200:
-                            break
-            
-                html = etree.HTML(r.text)
+                    r = requests.get('https://genius.com' + lyricsJson['response']['sections'][0]['hits'][0]['result']['path'])
 
-                if bool(lyricsJson['response']['sections'][0]['hits'][0]['result'].__contains__('artist_names')):
-                    foundArtist = str(lyricsJson['response']['sections'][0]['hits'][0]['result']['artist_names']).upper()
+                    if r.status_code != 200:
+                        while True:
+                            print(str(r))
+                            time.sleep(15)
+                            r = requests.get('https://genius.com' + lyricsJson['response']['sections'][0]['hits'][0]['result']['path'])
+                            if r.status_code == 200:
+                                break
+                
+                    html = etree.HTML(r.text)
+
+                    if bool(lyricsJson['response']['sections'][0]['hits'][0]['result'].__contains__('artist_names')):
+                        foundArtist = remove_accented_chars(lyricsJson['response']['sections'][0]['hits'][0]['result']['artist_names']).strip()
+                    else:
+                        foundArtist = None
+
+                    fuzzMatch = fuzz.partial_ratio(songData.loc[i,'artistName'].upper(), foundArtist.upper())
+
+                    if fuzzMatch <= 70:
+                        print(artist + ' ' + foundArtist, ': Bad Match')
+                        songData.loc[i,'isFound'] = False
+                        continue
+                
                 else:
-                    foundArtist = None
-
-                fuzzMatch = fuzz.partial_ratio(songData.loc[i,'artistName'].upper(), foundArtist)
-
-                if fuzzMatch <= 70:
-                    print(artist + ' ' + foundArtist, ': bad match')
+                    print(artist + ' ' + track + ': No Path')
                     songData.loc[i,'isFound'] = False
-                    continue
-            
+
             else:
-                print(artist + ' ' + track + ': No Path')
-                songData.loc[i,'isFound'] = False
+                print(artist + ' ' + track + ': No hits')
+                songData.loc[i, 'isFound'] = False
 
         # if the page/song is tagged as 'Non-Music' print to screen and break to next iteration
         # some music is incorrectly tagged, and some searches find the wrong results
@@ -153,26 +162,39 @@ for i in range(len(songData)):
                             break
 
                 lyricsJson = json.loads(r.text)
-                
-                r = requests.get('https://genius.com' + lyricsJson['response']['sections'][0]['hits'][0]['result']['path'])
 
-                if r.status_code != 200:
-                    while True:
-                        print(str(r))
-                        time.sleep(15)
+                if bool(lyricsJson['response']['sections'][0]['hits']) == True:
+
+                    if lyricsJson['response']['sections'][0]['hits'][0]['result'].__contains__('path'):
+                    
                         r = requests.get('https://genius.com' + lyricsJson['response']['sections'][0]['hits'][0]['result']['path'])
-                        if r.status_code == 200:
-                            break
 
-                html = etree.HTML(r.text)
+                        if r.status_code != 200:
+                            while True:
+                                print(str(r))
+                                time.sleep(15)
+                                r = requests.get('https://genius.com' + lyricsJson['response']['sections'][0]['hits'][0]['result']['path'])
+                                if r.status_code == 200:
+                                    break
 
-                if 'Non-Music' in findTags(html) or 'Literature' in findTags(html):
-                    print(artist + ' ' + track + ' ' + str(findTags(html)))
-                    songData.loc[i, 'tags'] = ', '.join(findTags(html))
-                    #continue
-        
+                        html = etree.HTML(r.text)
+
+                        if 'Non-Music' in findTags(html) or 'Literature' in findTags(html):
+                            print(artist + ' ' + track + ' ' + str(findTags(html)))
+                            songData.loc[i, 'tags'] = ', '.join(findTags(html))
+                            #continue
+
+                    else:
+                        print(artist + ' ' + track + ': No Path')
+                        songData.loc[i,'isFound'] = False
+
+                else:
+                    print(artist + ' ' + track, ': No Hits')
+                    songData.loc[i,'isFound'] = False
+                    continue
+
         # store artist name to confirm if lyrics are correct
-        songData.loc[i, 'geniusArtist'] = str(lyricsJson['response']['sections'][0]['hits'][0]['result']['artist_names'])
+        songData.loc[i, 'geniusArtist'] = foundArtist
 
         # if value is passed, returns True
         # json.dumps() allows us to store object as a string in this dataframe

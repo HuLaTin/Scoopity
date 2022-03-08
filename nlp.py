@@ -1,24 +1,22 @@
+import nltk
 import pandas as pd
+from nltk.tokenize import sent_tokenize, word_tokenize
+from nltk.stem import WordNetLemmatizer
 import json
 
-import scispacy
-import spacy
-#import en_core_sci_lg
-from spacy_langdetect import LanguageDetector
+stopwords = nltk.corpus.stopwords.words('english')
 
-from spacy.language import Language
 
-nlp = spacy.load("en_core_web_sm")
-nlp.add_pipe('language_detector', last=True)
+lyrics = pd.read_csv(r'Data\englishTrack.csv')
 
-lyricsData= pd.read_csv(r'Data\lyricPreprocess.csv')
-lyricsData['language'] = None; lyricsData['languageScore'] = None
+lyrics = lyrics[['artistName', 'trackName', 'processedLyrics']]
 
-for i in range(len(lyricsData)):
-    text = str(' '.join(json.loads(lyricsData.loc[i, 'processedLyrics'])))
-    doc = nlp(text)
-    language = list(doc._.language.values())
-    lyricsData.loc[i, 'language'] = language[0]
-    lyricsData.loc[i, 'languageScore'] = language[1]
-
-lyricsData.to_csv(r'Data\language.csv', index=False)
+for i in range(1):
+#for i in range(len(lyrics)):
+    song = json.loads(lyrics.loc[i, 'processedLyrics'])
+    for j in song:
+        words = word_tokenize(j)
+        print(words)
+        words = [j for j in words if j not in stopwords]
+        words = [j for j in words if j.isalnum()]
+        print(words)
