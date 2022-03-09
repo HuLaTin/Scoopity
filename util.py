@@ -2,6 +2,13 @@ from bs4 import BeautifulSoup
 import unidecode
 import contractions
 #import re
+from nltk.stem import WordNetLemmatizer
+
+# is this the right way?
+wordnet_lemmatizer = WordNetLemmatizer()
+def lemmatizer(text):
+    lemm_text = [wordnet_lemmatizer.lemmatize(word) for word in text]
+    return lemm_text
 
 def strip_html_tags(text):
     """remove html tags from text"""
@@ -10,7 +17,7 @@ def strip_html_tags(text):
     return stripped_text
 
 def remove_accented_chars(text):
-    """remove accented characters from text, e.g. café"""
+    """remove accented characters from text, e.g. café, unicode decode removes non utf-8 characters"""
     text = unidecode.unidecode(text)
     return text
 
