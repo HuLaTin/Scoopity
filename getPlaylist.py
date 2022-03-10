@@ -22,14 +22,14 @@ results = sp.user_playlist_tracks(username,playlist_id)['tracks'] # returns json
 tracks = results['items']
 while results['next']:
     results = sp.next(results) # next if paginated results
-    tracks.extend(results['items'])
+    tracks.extend(results['items']) # extend list
 
 playlistSongs = pd.DataFrame() # create empty dataframe
 playlistSongs['artistName'] = None;playlistSongs['trackName'] = None
 
 for i in range(len(tracks)):
     song = tracks[i]
-    playlistSongs.loc[i, 'artistName'] = str(song['track']['artists'][0]['name'])
-    playlistSongs.loc[i, 'trackName'] = str(song['track']['name'])
+    playlistSongs.loc[i, 'artistName'] = str(song['track']['artists'][0]['name']) # select artist name
+    playlistSongs.loc[i, 'trackName'] = str(song['track']['name']) # select track name
 
-playlistSongs.to_csv(r'Data\retrievedPlaylist.csv', index=False)
+playlistSongs.to_csv(r'Data\retrievedPlaylist.csv', index=False) # save to csv

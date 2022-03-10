@@ -2,9 +2,6 @@
 import pandas as pd
 import spotipy, Data.Input.myKeys as myKeys
 from spotipy.oauth2 import SpotifyClientCredentials
-import requests, json
-from urllib.parse import quote_plus
-from lxml import etree
 import util
 
 # set Client ID and Secret
@@ -22,9 +19,13 @@ streamingHistory = pd.read_csv(r'Data\Input\streamingHistory.csv')
 uniqueSongCount = streamingHistory.groupby(["artistName", "trackName"],as_index=False).size()
 uniqueSongCount = uniqueSongCount.rename(columns={'size': 'count'})
 
-# create copy for lyric data
-trackLyrics = uniqueSongCount.copy(deep=True)
-trackLyrics = trackLyrics.drop(columns=['count']); trackLyrics['lyrics'] = None; trackLyrics['tags'] = None; trackLyrics['geniusArtist'] = None
+trackLyrics = uniqueSongCount.copy(deep=True) # create copy for lyric data
+trackLyrics = trackLyrics[['artistName','trackName']]
+trackLyrics['tags'] = None # create new column for tags/genres
+trackLyrics['lyrics'] = None # create new column for lyrics
+trackLyrics['geniusArtist'] = None # column for artist field returned from Genius
+trackLyrics['releaseDate'] = None # column for release date scraped from Genius
+trackLyrics['isFound'] = None # column stores bool variable if found or not
 
 # get unique artist
 uniqueArtist = pd.DataFrame(streamingHistory.artistName.unique())
@@ -39,15 +40,11 @@ uniqueSongCount['id'] = None
 for i in spotifyFeatures:
     uniqueSongCount[i] = None
 
-# retrieve genre from spotify
+# retrieve genres from spotify
 print('Retrieving genre data from Spotify')
-#for i in range(5):
 for i in range(len(uniqueArtist)):
     artist = uniqueArtist.loc[i, 'artistName']
-
-    # call getGenre, get spotify id and genres
-    dictArt = util.getGenre(sp, artist)
-
+    dictArt = util.getGenre(sp, artist) # call getGenre, get spotify id and genres
     uniqueArtist.loc[i, 'id'] = dictArt['id']
     uniqueArtist.loc[i, 'genres'] = dictArt['genres']
 
@@ -56,7 +53,6 @@ uniqueArtist.to_csv(r'Data\genreData.csv', index = False)
 
 # collect Spotify features for specific tracks
 print('Retrieving track features from Spotify')
-#for i in range(5):
 for i in range(len(uniqueSongCount)):
     artist = uniqueSongCount.loc[i, 'artistName']
     track = uniqueSongCount.loc[i, 'trackName']
@@ -70,35 +66,18 @@ for i in range(len(uniqueSongCount)):
 print('Feature data collected')
 uniqueSongCount.to_csv(r'Data\featureData.csv', index = False)
 
-# collect lyrics for tracks by scraping Genius
-# update to collect release date
-###
-# UPDATE
-###
-
-# path for containers that hold lyrics as text on Genius' website
-lyricPath = etree.XPath("//div[@data-lyrics-container='true']/text()|//div[@data-lyrics-container='true']/a/span/text()")
-tagPath = etree.XPath("//a[starts-with(@class, 'SongTags')]/text()")
-
-# Use toRemove list to filter out 'problem' words, Genius titles don't always mirror Spotify.
-# trial and error
-toRemove = (' - Bonus Track', ' Bonus', ' (Demo)', ' (Acoustic)', ' - Remastered', ' - Original Mix', '- Live', ' Live', ' - Demo Version',' - Demo', ' - Single Version', ' - Single', ' - Radio Edit')
-
 print("Collecting Lyrics from Genius")
-#for i in range(200):
 for i in range(len(trackLyrics)):
     artist = trackLyrics.loc[i,'artistName']
     track = trackLyrics.loc[i, 'trackName']
 
-    for j in toRemove:
-        if j in track:
-            track = track.replace(j, '')
+    tags, lyrics, geniusArtist, releaseDate, isFound = util.getLyrics(artist, track)
 
-    lyrics, tags, artist = util.getLyrics(artist, track, lyricPath, tagPath, requests, quote_plus, json, etree)
-    trackLyrics.loc[i,'lyrics'] = lyrics
     trackLyrics.loc[i, 'tags'] = tags
-    trackLyrics.loc[i, 'geniusArtist '] = artist
-    #print(lyrics)
+    trackLyrics.loc[i, 'lyrics'] = lyrics
+    trackLyrics.loc[i, 'geniusArtist'] = geniusArtist
+    trackLyrics.loc[i, 'releaseDate'] = releaseDate
+    trackLyrics.loc[i, 'isFound'] = isFound
 
 print('Lyric data collected')
 trackLyrics.to_csv(r'Data\lyricData.csv', index = False)
