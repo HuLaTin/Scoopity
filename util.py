@@ -3,12 +3,17 @@ import unidecode
 import contractions
 #import re
 from nltk.stem import WordNetLemmatizer
+from num2words import num2words
 
 # is this the right way?
 wordnet_lemmatizer = WordNetLemmatizer()
 def lemmatizer(text):
     lemm_text = [wordnet_lemmatizer.lemmatize(word) for word in text]
     return lemm_text
+
+def convertNums(text):
+    convNums = [num2words(word) for word in text if word.isdigit()]
+    return convNums
 
 def strip_html_tags(text):
     """remove html tags from text"""

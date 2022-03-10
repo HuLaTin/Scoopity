@@ -30,6 +30,7 @@ for i in range(len(lyricData)):
         sent = util.strip_html_tags(sent) # strip html tags, common with webscraping
         sent = util.remove_accented_chars(sent) # swaps accented characters
         sent = util.expand_contractions(sent) # expand contractions
+        #sent = util.convertNums(sent)
 
         sent = re.sub(nonlyricPattern, '', sent);sent = re.sub(bracketPattern, '', sent)
         sent = re.sub(parenthesesPattern, '', sent)#;sent = re.sub(hyphenPattern, '-', sent)
@@ -47,14 +48,6 @@ for i in range(len(lyricData)):
 
     lyricData.loc[i, 'processedLyrics'] = json.dumps(lyrics)
         
-    #sentences = sent_tokenize(lyrics)
-
-    #lyrics = word_tokenize(lyrics.lower()) #tokenize each word/ turn all letters lower case
-
-    #lyrics = [word for word in lyrics if word not in stopwords.words('english')] # filtering out stop words
-    #lyricData.loc[i,'tokens'] = [word for word in lyrics if word.isalnum()] # filter out if not alpha-numeric
-    #lyricData.loc[i, 'uniqueWords'] = set(lyrics) # store a set of unique words
-
     # what about numbers?
 
 nan_value = float("NaN"); lyricData.replace("", nan_value, inplace=True) #replace any rows that are empty with 'NaN' values
@@ -87,5 +80,5 @@ for i in range(len(languageData)):
     languageData.loc[i, 'language'] = language[0]
     languageData.loc[i, 'languageScore'] = language[1]
 
-languageData = languageData.loc[(languageData['language'] == 'en') & (languageData['languageScore'] >= .7)] # select rows
+languageData = languageData.loc[(languageData['language'] == 'en') & (languageData['languageScore'] >= .7)] # select only english track, with score greater than .7
 languageData.to_csv(r'Data\englishTracks.csv', index=False)
