@@ -221,4 +221,5 @@ for i in range(len(songData)):
         print(artist + ' ' + track + ': No Path')
         songData.loc[i,'isFound'] = False
 
-songData.to_csv(r'Data\lyricData.csv', index = False)
+#songData.to_csv(r'Data\lyricData.csv', index = False)
+songData.to_csv(r'Data\testing.csv', index = False)

@@ -72,9 +72,8 @@ findLyrics = etree.XPath("//div[@data-lyrics-container='true']/text()|//div[@dat
 findReleaseDate = etree.XPath("//div[starts-with(@class, 'HeaderMetadata')]/text()")
 findTags = etree.XPath("//a[starts-with(@class, 'SongTags')]/text()")
 trackPattern = r'\(.*?\)|\-.*?$'
-### WIP ###
 def getLyrics(artist, track):
-
+    tags = None;lyrics = None;geniusArtist=None;releaseDate=None;isFound=False
     # search genius for artist + track
     r = requests.get('https://genius.com/api/search/multi?per_page=5&q='+ quote_plus(artist + ' ' + track))
     
@@ -111,6 +110,7 @@ def getLyrics(artist, track):
         if bool(lyricsJson['response']['sections'][0]['hits']) == False:
             print(artist + ' ' + track, ': No Hits')
             isFound = False
+            return
    
     # if a path exists, request page and scrape data
     if lyricsJson['response']['sections'][0]['hits'][0]['result'].__contains__('path'):
@@ -226,7 +226,7 @@ def getLyrics(artist, track):
                         if 'Non-Music' in findTags(html) or 'Literature' in findTags(html):
                             print(artist + ' ' + track + ' ' + str(findTags(html)))
                             tags = ', '.join(findTags(html))
-                            #continue
+                            return
 
                     else:
                         print(artist + ' ' + track + ': No Path')
@@ -249,7 +249,6 @@ def getLyrics(artist, track):
         else:
             isFound = False
             
-
         if bool(findTags(html)):
             tags = json.dumps(findTags(html))
         else:
@@ -264,5 +263,6 @@ def getLyrics(artist, track):
     else:
         print(artist + ' ' + track + ': No Path')
         isFound = False
-            
-    return tags, lyrics, geniusArtist, releaseDate, isFound
+    
+    lyricsDict = {'tags': tags, 'lyrics': lyrics, 'geniusArtist':geniusArtist, 'releaseDate':releaseDate, 'isFound': isFound}
+    return lyricsDict

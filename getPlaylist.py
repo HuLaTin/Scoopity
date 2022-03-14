@@ -32,4 +32,4 @@ for i in range(len(tracks)):
     playlistSongs.loc[i, 'artistName'] = str(song['track']['artists'][0]['name']) # select artist name
     playlistSongs.loc[i, 'trackName'] = str(song['track']['name']) # select track name
 
-playlistSongs.to_csv(r'Data\retrievedPlaylist.csv', index=False) # save to csv
+playlistSongs.to_csv(r'Data\Input\retrievedPlaylist.csv', index=False) # save to csv

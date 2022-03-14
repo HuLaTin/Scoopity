@@ -2,7 +2,7 @@ import pandas as pd
 import json, re
 import util
 
-lyricData = pd.read_csv(r'Data\lyricData.csv') # import data
+lyricData = pd.read_csv(r'Data\main\lyricData.csv') # import data
 
 lyricData = lyricData[lyricData['isFound'] == True]
 lyricData = lyricData[['artistName','trackName','lyrics']] # setting order of columns
@@ -10,7 +10,7 @@ lyricData['processedLyrics'] = None#; lyricData['uniqueWords'] = None # creation
 #lyricData['language'] = None; lyricData['languageScore'] = None
 
 #type(lyricData['lyrics'])
-lyricData.reset_index(drop=True, inplace=True) # remove rows with nothing in them
+lyricData.reset_index(drop=True, inplace=True) # reset index
 
 nonlyricPattern = r'\[.*?\]|\(\s*?\)|\*+'
 bracketPattern = r'\[.*|\]'

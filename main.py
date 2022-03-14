@@ -13,7 +13,7 @@ client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secr
 sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
 
 # load streaming history
-streamingHistory = pd.read_csv(r'Data\Input\streamingHistory.csv')
+streamingHistory = pd.read_csv(r'Data\Input\slowdancePlaylist.csv')
 
 # get unique songs and the number of listens
 uniqueSongCount = streamingHistory.groupby(["artistName", "trackName"],as_index=False).size()
@@ -25,7 +25,7 @@ trackLyrics['tags'] = None # create new column for tags/genres
 trackLyrics['lyrics'] = None # create new column for lyrics
 trackLyrics['geniusArtist'] = None # column for artist field returned from Genius
 trackLyrics['releaseDate'] = None # column for release date scraped from Genius
-trackLyrics['isFound'] = None # column stores bool variable if found or not
+trackLyrics['isFound'] = False # column stores bool variable if found or not
 
 # get unique artist
 uniqueArtist = pd.DataFrame(streamingHistory.artistName.unique())
@@ -49,7 +49,7 @@ for i in range(len(uniqueArtist)):
     uniqueArtist.loc[i, 'genres'] = dictArt['genres']
 
 print('Genre data collected')
-uniqueArtist.to_csv(r'Data\genreData.csv', index = False)
+uniqueArtist.to_csv(r'Data\main\genreData.csv', index = False)
 
 # collect Spotify features for specific tracks
 print('Retrieving track features from Spotify')
@@ -64,20 +64,20 @@ for i in range(len(uniqueSongCount)):
         uniqueSongCount.loc[i,j] = dictFeat[j]
 
 print('Feature data collected')
-uniqueSongCount.to_csv(r'Data\featureData.csv', index = False)
+uniqueSongCount.to_csv(r'Data\main\featureData.csv', index = False)
 
 print("Collecting Lyrics from Genius")
 for i in range(len(trackLyrics)):
     artist = trackLyrics.loc[i,'artistName']
     track = trackLyrics.loc[i, 'trackName']
 
-    tags, lyrics, geniusArtist, releaseDate, isFound = util.getLyrics(artist, track)
-
-    trackLyrics.loc[i, 'tags'] = tags
-    trackLyrics.loc[i, 'lyrics'] = lyrics
-    trackLyrics.loc[i, 'geniusArtist'] = geniusArtist
-    trackLyrics.loc[i, 'releaseDate'] = releaseDate
-    trackLyrics.loc[i, 'isFound'] = isFound
-
+    lyricsDict = util.getLyrics(artist, track)
+    if bool(lyricsDict) == True:
+        trackLyrics.loc[i, 'tags'] = lyricsDict['tags']
+        trackLyrics.loc[i, 'lyrics'] = lyricsDict['lyrics']
+        trackLyrics.loc[i, 'geniusArtist'] = lyricsDict['geniusArtist']
+        trackLyrics.loc[i, 'releaseDate'] = lyricsDict['releaseDate']
+        trackLyrics.loc[i, 'isFound'] = lyricsDict['isFound']
+    
 print('Lyric data collected')
-trackLyrics.to_csv(r'Data\lyricData.csv', index = False)
+trackLyrics.to_csv(r'Data\main\lyricData.csv', index = False)
