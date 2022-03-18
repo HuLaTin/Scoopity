@@ -4,7 +4,7 @@ import spotipy, Data.Input.myKeys as myKeys
 from spotipy.oauth2 import SpotifyClientCredentials
 
 # load in data
-streamingHistory = pd.read_csv(r'Data\streamingHistory.csv')
+streamingHistory = pd.read_csv(r'Data\Input\streamingHistory.csv')
 
 # get unique entries for artist column
 uniqueArtist = pd.DataFrame(streamingHistory.artistName.unique())
@@ -23,6 +23,7 @@ secret = myKeys.secret
 #spotipy credentials manager
 client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
 sp = spotipy.Spotify(client_credentials_manager = client_credentials_manager)
+genreList = []
 
 # for each row in dataframe select artist
 #for i in range(5):
@@ -40,7 +41,9 @@ for i in range(len(uniqueArtist)):
     # else enter desired fields into dataframe
     else:
         uniqueArtist.loc[i, 'id'] = searchResults['artists']['items'][0]['id']
-        uniqueArtist.loc[i, 'genres'] = ', '.join(searchResults['artists']['items'][0]['genres'])
+        genreList.extend(searchResults['artists']['items'][0]['genres'])
+        uniqueArtist.loc[i, 'genres'] = searchResults['artists']['items'][0]['genres']
 
-# save to CSV
-uniqueArtist.to_csv(r'Data\artistData.csv', index = False)
+genreList = list(set(genreList))
+uniqueArtist = uniqueArtist.explode('genres') # explode lists, (similar to melt?)
+uniqueArtist.to_csv(r'Data\artistData.csv', index = False)# save to CSV

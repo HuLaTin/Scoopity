@@ -52,7 +52,7 @@ for i in range(len(uniqueSongCount)):
     #if nothing is returned in the search query
     if len(searchResults['tracks']['items']) == 0:
         uniqueSongCount.loc[i,'id':] = None
-        print(searchQuery + ': *** No longer on Spotify ***')
+        print(searchQuery + ': Not Found.')
         continue
     else:
         uniqueSongCount.loc[i, 'id'] = searchResults['tracks']['items'][0]['id']

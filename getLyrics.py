@@ -1,9 +1,11 @@
 #from numpy import True_
+from operator import le
 import pandas as pd
 import requests, json, time, re
 from urllib.parse import quote_plus
 from lxml import etree
 from fuzzywuzzy import fuzz
+from torch import t
 from util import remove_accented_chars
 
 
@@ -221,5 +223,31 @@ for i in range(len(songData)):
         print(artist + ' ' + track + ': No Path')
         songData.loc[i,'isFound'] = False
 
-#songData.to_csv(r'Data\lyricData.csv', index = False)
-songData.to_csv(r'Data\testing.csv', index = False)
+
+#############
+# I think im misunderstanding my data types
+# goal is to 'explode' column for use in data analysis
+
+trackTags = songData[['artistName', 'trackName', 'tags']].copy()
+trackTags = trackTags.dropna()
+trackTags['uniqueTags'] = None # new column, empty
+trackTags = trackTags.reset_index(drop=True) # reset column, drop original
+
+for i in range(len(trackTags)):
+    tags = trackTags.loc[i, 'tags']
+    tags = tags.strip('][').split(', ') # split string and remove brackets
+    trackTags.at[i, 'uniqueTags'] = tags
+
+trackTags.drop(columns = 'tags', inplace=True) # drop column
+trackTags = trackTags.explode('uniqueTags') # explode on 'uniqueTags' column
+trackTags = trackTags.reset_index(drop=True) # reset index and drop original column
+
+for i in range(len(trackTags)):
+    tags = trackTags.loc[i, 'uniqueTags']
+    trackTags.loc[i, 'uniqueTags'] = tags.replace('"', "") # remove double quotes
+
+#############
+
+songData.to_csv(r'Data\lyricData.csv', index = False)
+#songData.to_csv(r'Data\testing.csv', index = False)
+trackTags.to_csv(r'Data\trackTags.csv', index = False)
