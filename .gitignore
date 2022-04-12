@@ -12,3 +12,8 @@ my_spotify_data/MyData
 __pycache__
 __pycache__/myKeys.cpython-37.pyc
 __pycache__/util.cpython-37.pyc
+journeyString/journey.txt
+journeyString/journey2.txt
+aiTextGen/aitextgen.tokenizer.json
+aiTextGen/trained_model/config.json
+aiTextGen/trained_model/pytorch_model.bin
